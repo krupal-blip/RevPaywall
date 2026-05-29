@@ -1,0 +1,432 @@
+# FocusFlow RevenueCat Demo — Refactor & Integration Tasks
+
+## Goal
+
+Convert current “all screens inside MainActivity” demo into a cleaner modular structure for:
+
+* RevenueCat Paywall UI demo
+* Offerings demo
+* Custom Attributes demo
+* Placement-based monetization demo
+* PM presentation clarity
+
+Keep architecture simple and demo-friendly.
+
+---
+
+# PHASE 1 — Refactor MainActivity ✅ DONE
+
+## Current Problem
+
+Right now:
+
+```text
+MainActivity contains all screens/views
+```
+
+This makes:
+
+* paywall placement logic messy
+* RevenueCat demo hard to explain
+* targeting flow unclear
+
+---
+
+## Task 1 — Separate Screens
+
+Create separate Activities or Fragments.
+
+Recommended:
+
+| Screen                  | Type     |
+| ----------------------- | -------- |
+| SplashActivity          | Activity |
+| OnboardingActivity      | Activity |
+| HomeActivity            | Activity |
+| PremiumFeaturesActivity | Activity |
+| SettingsActivity        | Activity |
+
+Keep it simple.
+No need Navigation Component for demo.
+
+---
+
+## Task 2 — MainActivity Responsibility
+
+Convert MainActivity into:
+
+```text
+App launcher / routing activity only
+```
+
+Example:
+
+```kotlin
+Check:
+- first launch?
+- logged in?
+- onboarding complete?
+
+Then redirect.
+```
+
+---
+
+# PHASE 2 — RevenueCat Setup ✅ DONE
+
+## Task 3 — Create RevenueCatManager
+
+### File
+
+```text
+manager/RevenueCatManager.kt
+```
+
+### Responsibility
+
+Centralize:
+
+* SDK init
+* offering fetch
+* entitlement check
+* restore purchase
+
+### Methods Needed
+
+```kotlin
+init(context)
+
+getCurrentOffering()
+
+getOfferingById(offeringId)
+
+restorePurchases()
+
+isProUser()
+```
+
+### Add Comments Like
+
+```kotlin
+// Central RevenueCat handler
+// Keeps billing/paywall logic separated from UI screens
+```
+
+---
+
+## Task 4 — Create UserAttributeManager
+
+### File
+
+```text
+manager/UserAttributeManager.kt
+```
+
+### Responsibility
+
+Handle all RevenueCat custom attributes.
+
+### Methods
+
+```kotlin
+setPreferredTheme(theme)
+
+setPaywallSource(source)
+
+setLockedFeature(feature)
+
+setUserSegment(segment)
+```
+
+### IMPORTANT COMMENT STYLE
+
+Example:
+
+```kotlin
+// Used for personalized onboarding targeting
+// Example values: study, work, fitness
+```
+
+AND:
+
+```kotlin
+// Tracks from which app placement paywall was opened
+// Helps analyze conversion source
+```
+
+---
+
+# PHASE 3 — Paywall Placement Logic ✅ DONE
+
+## Task 5 — Create PaywallManager
+
+### File
+
+```text
+manager/PaywallManager.kt
+```
+
+### Responsibility
+
+Single place for:
+
+* deciding offering
+* launching paywall
+* placement tracking
+
+---
+
+### 1. Show Onboarding Paywall
+
+```kotlin
+showOnboardingPaywall(activity)
+```
+
+#### Logic
+
+* set placement attr
+* open Current offering
+
+#### Comment
+
+```kotlin
+// Personalized onboarding paywall
+// Uses Current offering as primary monetization flow
+```
+
+---
+
+### 2. Show Home CTA Paywall
+
+```kotlin
+showHomePaywall(activity)
+```
+
+#### Logic
+
+* set source attr
+* open Experiment offering
+
+#### Comment
+
+```kotlin
+// Experiment offering demo
+// Represents A/B testing or remote monetization strategy
+```
+
+---
+
+### 3. Show Settings Paywall
+
+```kotlin
+showSettingsPaywall(activity)
+```
+
+#### Logic
+
+* open Experiment offering
+
+#### Comment
+
+```kotlin
+// Secondary upgrade placement
+// Demonstrates alternate paywall entry point
+```
+
+---
+
+### 4. Show Feature Paywall
+
+```kotlin
+showFeaturePaywall(activity, featureName)
+```
+
+#### Logic
+
+* set locked feature attr
+* open Offer Plan offering
+
+#### Comment
+
+```kotlin
+// Contextual monetization flow
+// Triggered when user attempts premium feature access
+```
+
+---
+
+# PHASE 4 — First Time Flow ✅ DONE
+
+## Task 6 — Add First Launch Logic
+
+### Use SharedPreferences
+
+Store:
+
+```text
+is_onboarding_complete
+```
+
+### Flow
+
+```text
+Splash
+↓
+First launch?
+↓ YES
+Onboarding
+↓
+Home
+
+NO
+↓
+Home
+```
+
+---
+
+# PHASE 5 — Onboarding Flow ✅ DONE
+
+## Task 7 — Persona Selection
+
+### Add Options
+
+* Study
+* Work
+* Fitness
+* General
+
+### On Selection
+
+Call:
+
+```kotlin
+UserAttributeManager.setPreferredTheme("study")
+```
+
+### Add Comment
+
+```kotlin
+// RevenueCat custom attribute
+// Used to demonstrate personalized targeting concepts
+```
+
+---
+
+## Task 8 — Onboarding Paywall Trigger
+
+After onboarding:
+
+```kotlin
+PaywallManager.showOnboardingPaywall(this)
+```
+
+---
+
+# PHASE 6 — Home Screen ✅ DONE
+
+## Task 9 — Add “Go Pro” CTA
+
+### On Click
+
+```kotlin
+PaywallManager.showHomePaywall(this)
+```
+
+### Comment
+
+```kotlin
+// Main monetization CTA
+// Uses Experiment offering for demo purposes
+```
+
+---
+
+# PHASE 7 — Premium Features Screen ✅ DONE
+
+## Task 10 — Add Locked Premium Features
+
+Cards:
+
+* AI Suggestions
+* Deep Analytics
+* Cloud Sync
+* Premium Themes
+
+### On Card Click
+
+Example:
+
+```kotlin
+PaywallManager.showFeaturePaywall(
+    this,
+    "ai_suggestions"
+)
+```
+
+### Comment
+
+```kotlin
+// Feature-specific contextual paywall
+// Helps demonstrate intent-based monetization
+```
+
+---
+
+# PHASE 8 — Settings Screen ✅ DONE
+
+## Task 11 — Add RevenueCat Debug Section
+
+Show:
+
+| Item                | Example    |
+| ------------------- | ---------- |
+| Current Offering    | Experiment |
+| Current Persona     | Study      |
+| Subscription Status | Free       |
+| Last Placement      | ai_feature |
+
+### Add Buttons
+
+| Button            | Action                   |
+| ----------------- | ------------------------ |
+| Restore Purchases | RevenueCat restore       |
+| Check Entitlement | Check pro                |
+| Open Upgrade      | Open Experiment offering |
+
+---
+
+# PHASE 9 — RevenueCat Offering Mapping ✅ DONE
+
+## Final Offering Usage
+
+| App Placement    | Offering   |
+| ---------------- | ---------- |
+| Onboarding       | Current    |
+| Home CTA         | Experiment |
+| Settings Upgrade | Experiment |
+| Premium Features | Offer Plan |
+
+---
+
+# PHASE 10 — Important Comments To Add Everywhere ✅ DONE
+
+Wherever RevenueCat logic exists,
+add WHY comments.
+
+Example:
+
+```kotlin
+// We set placement attributes before opening paywall
+// so conversion sources can later be analyzed
+```
+
+AND:
+
+```kotlin
+// Offer Plan offering is used here because
+// feature-intent users usually have higher conversion intent
+```
+
+---
+*Also mark what pahse done.
